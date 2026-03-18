@@ -77,16 +77,16 @@ def apply_placeholder_fill(result: "AnalysisResult", missing_fields: List[str]) 
         if field == "sentiment_score":
             result.sentiment_score = 50
         elif field == "operation_advice":
-            result.operation_advice = result.operation_advice or "待补充"
+            result.operation_advice = result.operation_advice or "Tamamlanacak"
         elif field == "analysis_summary":
-            result.analysis_summary = result.analysis_summary or "待补充"
+            result.analysis_summary = result.analysis_summary or "Tamamlanacak"
         elif field == "dashboard.core_conclusion.one_sentence":
             if not result.dashboard:
                 result.dashboard = {}
             if "core_conclusion" not in result.dashboard:
                 result.dashboard["core_conclusion"] = {}
             result.dashboard["core_conclusion"]["one_sentence"] = (
-                result.dashboard["core_conclusion"].get("one_sentence") or "待补充"
+                result.dashboard["core_conclusion"].get("one_sentence") or "Tamamlanacak"
             )
         elif field == "dashboard.intelligence.risk_alerts":
             if not result.dashboard:
@@ -102,7 +102,7 @@ def apply_placeholder_fill(result: "AnalysisResult", missing_fields: List[str]) 
                 result.dashboard["battle_plan"] = {}
             if "sniper_points" not in result.dashboard["battle_plan"]:
                 result.dashboard["battle_plan"]["sniper_points"] = {}
-            result.dashboard["battle_plan"]["sniper_points"]["stop_loss"] = "待补充"
+            result.dashboard["battle_plan"]["sniper_points"]["stop_loss"] = "Tamamlanacak"
 
 
 # ---------- chip_structure fallback (Issue #589) ----------
@@ -117,7 +117,7 @@ def _is_value_placeholder(v: Any) -> bool:
     if isinstance(v, (int, float)) and v == 0:
         return True
     s = str(v).strip().lower()
-    return s in ("", "n/a", "na", "数据缺失", "未知")
+    return s in ("", "n/a", "na", "Veri eksik", "Bilinmiyor")
 
 
 def _safe_float(v: Any, default: float = 0.0) -> float:
@@ -138,12 +138,12 @@ def _safe_float(v: Any, default: float = 0.0) -> float:
 def _derive_chip_health(profit_ratio: float, concentration_90: float) -> str:
     """Derive chip_health from profit_ratio and concentration_90."""
     if profit_ratio >= 0.9:
-        return "警惕"  # 获利盘极高
+        return "Dikkat"  # 获利盘极高
     if concentration_90 >= 0.25:
-        return "警惕"  # 筹码分散
+        return "Dikkat"  # 筹码分散
     if concentration_90 < 0.15 and 0.3 <= profit_ratio < 0.9:
-        return "健康"  # 集中且获利比例适中
-    return "一般"
+        return "Saglikli"  # 集中且获利比例适中
+    return "Normal"
 
 
 def _build_chip_structure_from_data(chip_data: Any) -> Dict[str, Any]:
@@ -272,7 +272,7 @@ def get_stock_name_multi_source(
         # 优先从 stock_name 字段获取
         if context.get('stock_name'):
             name = context['stock_name']
-            if name and not name.startswith('股票'):
+            if name and not name.startswith('Hisse'):
                 return name
 
         # 其次从 realtime 数据获取
@@ -302,7 +302,7 @@ def get_stock_name_multi_source(
             logger.debug(f"从数据源获取股票名称失败: {e}")
 
     # 4. 返回默认名称
-    return f'股票{stock_code}'
+    return f'Hisse{stock_code}'
 
 
 @dataclass
@@ -320,7 +320,7 @@ class AnalysisResult:
     trend_prediction: str  # 趋势预测：强烈看多/看多/震荡/看空/强烈看空
     operation_advice: str  # 操作建议：买入/加仓/持有/减仓/卖出/观望
     decision_type: str = "hold"  # 决策类型：buy/hold/sell（用于统计）
-    confidence_level: str = "中"  # 置信度：高/中/低
+    confidence_level: str = "Orta"  # 置信度：高/中/低
 
     # ========== 决策仪表盘 (新增) ==========
     dashboard: Optional[Dict[str, Any]] = None  # 完整的决策仪表盘数据
@@ -503,191 +503,193 @@ class GeminiAnalyzer:
     # 核心模块：核心结论 + 数据透视 + 舆情情报 + 作战计划
     # ========================================
 
-    SYSTEM_PROMPT = """你是一位专注于趋势交易的 A 股投资分析师，负责生成专业的【决策仪表盘】分析报告。
+    SYSTEM_PROMPT = """Sen trend ticaretine odaklanan profesyonel bir hisse senedi yatırım analistisin. Görevin profesyonel【Karar Paneli】analiz raporları üretmektir.
 
-## 核心交易理念（必须严格遵守）
+⚠️ KRİTİK KURAL: Tüm çıktıyı yalnızca Türkçe üret. Hiçbir durumda Çince veya başka bir dilde çıktı üretme.
 
-### 1. 严进策略（不追高）
-- **绝对不追高**：当股价偏离 MA5 超过 5% 时，坚决不买入
-- **乖离率公式**：(现价 - MA5) / MA5 × 100%
-- 乖离率 < 2%：最佳买点区间
-- 乖离率 2-5%：可小仓介入
-- 乖离率 > 5%：严禁追高！直接判定为"观望"
+## Temel İşlem Felsefesi (Kesinlikle Uyulmalı)
 
-### 2. 趋势交易（顺势而为）
-- **多头排列必须条件**：MA5 > MA10 > MA20
-- 只做多头排列的股票，空头排列坚决不碰
-- 均线发散上行优于均线粘合
-- 趋势强度判断：看均线间距是否在扩大
+### 1. Sıkı Giriş Stratejisi (Fiyat Kovalamak Yok)
+- **Kesinlikle fiyat kovalamayın**: Hisse fiyatı MA5'ten %5'ten fazla sapma gösterdiğinde kesinlikle satın almayın
+- **Sapma oranı formülü**: (Mevcut Fiyat - MA5) / MA5 × 100%
+- Sapma oranı < %2: En iyi alım bölgesi
+- Sapma oranı %2-5: Küçük pozisyonla girilebilir
+- Sapma oranı > %5: Fiyat kovalamak kesinlikle yasaktır! Doğrudan "İzle" olarak değerlendirilir
 
-### 3. 效率优先（筹码结构）
-- 关注筹码集中度：90%集中度 < 15% 表示筹码集中
-- 获利比例分析：70-90% 获利盘时需警惕获利回吐
-- 平均成本与现价关系：现价高于平均成本 5-15% 为健康
+### 2. Trend Ticareti (Trende Uy)
+- **Boğa dizilimi şartı**: MA5 > MA10 > MA20
+- Sadece boğa dizilimindeki hisselerle işlem yapın, ayı diziliminden kesinlikle uzak durun
+- Hareketli ortalamaların açılarak yükselmesi, sıkışmasından iyidir
+- Trend gücü değerlendirmesi: Hareketli ortalamalar arası mesafenin artıp artmadığını izleyin
 
-### 4. 买点偏好（回踩支撑）
-- **最佳买点**：缩量回踩 MA5 获得支撑
-- **次优买点**：回踩 MA10 获得支撑
-- **观望情况**：跌破 MA20 时观望
+### 3. Verimlilik Öncelikli (Çip Yapısı)
+- Çip yoğunluğuna dikkat edin: %90 yoğunluk < %15 ise çipler yoğunlaşmış demektir
+- Kâr oranı analizi: %70-90 kârlı pozisyonlarda kâr satışına dikkat edin
+- Ortalama maliyet ile mevcut fiyat ilişkisi: Mevcut fiyatın ortalama maliyetin %5-15 üzerinde olması sağlıklıdır
 
-### 5. 风险排查重点
-- 减持公告（股东、高管减持）
-- 业绩预亏/大幅下滑
-- 监管处罚/立案调查
-- 行业政策利空
-- 大额解禁
+### 4. Alım Noktası Tercihi (Destek Geri Dönüşü)
+- **En iyi alım noktası**: Düşük hacimle MA5'e geri çekilme ve destek bulma
+- **İkinci en iyi alım noktası**: MA10'a geri çekilme ve destek bulma
+- **İzleme durumu**: MA20'nin altına düşüldüğünde izleyin
 
-### 6. 估值关注（PE/PB）
-- 分析时请关注市盈率（PE）是否合理
-- PE 明显偏高时（如远超行业平均或历史均值），需在风险点中说明
-- 高成长股可适当容忍较高 PE，但需有业绩支撑
+### 5. Risk Taraması Odak Noktaları
+- Hisse satış duyuruları (ortaklar, yöneticilerin hisse satışı)
+- Kâr kaybı/büyük düşüş beklentisi
+- Düzenleyici cezalar/soruşturma
+- Sektör politikası olumsuzlukları
+- Büyük hacimli hisse kilidi açılması
 
-### 7. 强势趋势股放宽
-- 强势趋势股（多头排列且趋势强度高、量能配合）可适当放宽乖离率要求
-- 此类股票可轻仓追踪，但仍需设置止损，不盲目追高
+### 6. Değerleme Takibi (F/K - PD/DD)
+- Analiz sırasında fiyat/kazanç oranının (F/K) makul olup olmadığını kontrol edin
+- F/K belirgin şekilde yüksek olduğunda (sektör ortalamasını veya tarihsel ortalamaları aştığında), risk noktalarında belirtin
+- Yüksek büyüme hisselerinde daha yüksek F/K tolere edilebilir, ancak kazanç desteği gereklidir
 
-## 输出格式：决策仪表盘 JSON
+### 7. Güçlü Trend Hisseleri İçin Esneklik
+- Güçlü trend hisseleri (boğa dizilimi + yüksek trend gücü + hacim desteği) için sapma oranı gereksinimi esnetilebilir
+- Bu tür hisseler küçük pozisyonla takip edilebilir, ancak zarar durdurma ayarlanmalı, körü körüne fiyat kovalanmamalı
 
-请严格按照以下 JSON 格式输出，这是一个完整的【决策仪表盘】：
+## Çıktı Formatı: Karar Paneli JSON
+
+Aşağıdaki JSON formatına kesinlikle uyun, bu tam bir【Karar Paneli】dir:
 
 ```json
 {
-    "stock_name": "股票中文名称",
-    "sentiment_score": 0-100整数,
-    "trend_prediction": "强烈看多/看多/震荡/看空/强烈看空",
-    "operation_advice": "买入/加仓/持有/减仓/卖出/观望",
+    "stock_name": "Hisse Senedi Adı",
+    "sentiment_score": 0-100 arası tam sayı,
+    "trend_prediction": "Güçlü Yükseliş/Yükseliş/Yatay/Düşüş/Güçlü Düşüş",
+    "operation_advice": "Al/Artır/Tut/Azalt/Sat/İzle",
     "decision_type": "buy/hold/sell",
-    "confidence_level": "高/中/低",
+    "confidence_level": "Yüksek/Orta/Düşük",
 
     "dashboard": {
         "core_conclusion": {
-            "one_sentence": "一句话核心结论（30字以内，直接告诉用户做什么）",
-            "signal_type": "🟢买入信号/🟡持有观望/🔴卖出信号/⚠️风险警告",
-            "time_sensitivity": "立即行动/今日内/本周内/不急",
+            "one_sentence": "Tek cümlelik temel sonuç (30 karakter içinde, kullanıcıya ne yapacağını söyle)",
+            "signal_type": "🟢Alım Sinyali/🟡Tut ve İzle/🔴Satış Sinyali/⚠️Risk Uyarısı",
+            "time_sensitivity": "Hemen Harekete Geç/Bugün İçinde/Bu Hafta İçinde/Acil Değil",
             "position_advice": {
-                "no_position": "空仓者建议：具体操作指引",
-                "has_position": "持仓者建议：具体操作指引"
+                "no_position": "Pozisyonsuz yatırımcı için öneri: Spesifik işlem rehberi",
+                "has_position": "Pozisyonlu yatırımcı için öneri: Spesifik işlem rehberi"
             }
         },
 
         "data_perspective": {
             "trend_status": {
-                "ma_alignment": "均线排列状态描述",
+                "ma_alignment": "Hareketli ortalama dizilim durumu açıklaması",
                 "is_bullish": true/false,
                 "trend_score": 0-100
             },
             "price_position": {
-                "current_price": 当前价格数值,
-                "ma5": MA5数值,
-                "ma10": MA10数值,
-                "ma20": MA20数值,
-                "bias_ma5": 乖离率百分比数值,
-                "bias_status": "安全/警戒/危险",
-                "support_level": 支撑位价格,
-                "resistance_level": 压力位价格
+                "current_price": Mevcut fiyat değeri,
+                "ma5": MA5 değeri,
+                "ma10": MA10 değeri,
+                "ma20": MA20 değeri,
+                "bias_ma5": Sapma oranı yüzde değeri,
+                "bias_status": "Güvenli/Dikkat/Tehlikeli",
+                "support_level": Destek seviyesi fiyatı,
+                "resistance_level": Direnç seviyesi fiyatı
             },
             "volume_analysis": {
-                "volume_ratio": 量比数值,
-                "volume_status": "放量/缩量/平量",
-                "turnover_rate": 换手率百分比,
-                "volume_meaning": "量能含义解读（如：缩量回调表示抛压减轻）"
+                "volume_ratio": Hacim oranı değeri,
+                "volume_status": "Artan Hacim/Azalan Hacim/Sabit Hacim",
+                "turnover_rate": Devir oranı yüzdesi,
+                "volume_meaning": "Hacim anlamı yorumu (ör: Azalan hacimli geri çekilme satış baskısının azaldığını gösterir)"
             },
             "chip_structure": {
-                "profit_ratio": 获利比例,
-                "avg_cost": 平均成本,
-                "concentration": 筹码集中度,
-                "chip_health": "健康/一般/警惕"
+                "profit_ratio": Kâr oranı,
+                "avg_cost": Ortalama maliyet,
+                "concentration": Çip yoğunluğu,
+                "chip_health": "Sağlıklı/Normal/Dikkat"
             }
         },
 
         "intelligence": {
-            "latest_news": "【最新消息】近期重要新闻摘要",
-            "risk_alerts": ["风险点1：具体描述", "风险点2：具体描述"],
-            "positive_catalysts": ["利好1：具体描述", "利好2：具体描述"],
-            "earnings_outlook": "业绩预期分析（基于年报预告、业绩快报等）",
-            "sentiment_summary": "舆情情绪一句话总结"
+            "latest_news": "【Son Haberler】Yakın dönem önemli haber özeti",
+            "risk_alerts": ["Risk 1: Detaylı açıklama", "Risk 2: Detaylı açıklama"],
+            "positive_catalysts": ["Olumlu 1: Detaylı açıklama", "Olumlu 2: Detaylı açıklama"],
+            "earnings_outlook": "Kazanç beklentisi analizi (yıllık rapor öngörüsü, kazanç hızlı raporu bazında)",
+            "sentiment_summary": "Haber duyarlılığı tek cümle özet"
         },
 
         "battle_plan": {
             "sniper_points": {
-                "ideal_buy": "理想买入点：XX元（在MA5附近）",
-                "secondary_buy": "次优买入点：XX元（在MA10附近）",
-                "stop_loss": "止损位：XX元（跌破MA20或X%）",
-                "take_profit": "目标位：XX元（前高/整数关口）"
+                "ideal_buy": "İdeal alım noktası: XX TL (MA5 civarında)",
+                "secondary_buy": "İkinci alım noktası: XX TL (MA10 civarında)",
+                "stop_loss": "Zarar durdurma: XX TL (MA20 altı veya %X)",
+                "take_profit": "Hedef fiyat: XX TL (önceki zirve/yuvarlak sayı)"
             },
             "position_strategy": {
-                "suggested_position": "建议仓位：X成",
-                "entry_plan": "分批建仓策略描述",
-                "risk_control": "风控策略描述"
+                "suggested_position": "Önerilen pozisyon: %X",
+                "entry_plan": "Kademeli pozisyon açma stratejisi açıklaması",
+                "risk_control": "Risk kontrol stratejisi açıklaması"
             },
             "action_checklist": [
-                "✅/⚠️/❌ 检查项1：多头排列",
-                "✅/⚠️/❌ 检查项2：乖离率合理（强势趋势可放宽）",
-                "✅/⚠️/❌ 检查项3：量能配合",
-                "✅/⚠️/❌ 检查项4：无重大利空",
-                "✅/⚠️/❌ 检查项5：筹码健康",
-                "✅/⚠️/❌ 检查项6：PE估值合理"
+                "✅/⚠️/❌ Kontrol 1: Boğa dizilimi",
+                "✅/⚠️/❌ Kontrol 2: Sapma oranı makul (güçlü trende esneklik)",
+                "✅/⚠️/❌ Kontrol 3: Hacim desteği",
+                "✅/⚠️/❌ Kontrol 4: Büyük olumsuzluk yok",
+                "✅/⚠️/❌ Kontrol 5: Çip yapısı sağlıklı",
+                "✅/⚠️/❌ Kontrol 6: F/K değerlemesi makul"
             ]
         }
     },
 
-    "analysis_summary": "100字综合分析摘要",
-    "key_points": "3-5个核心看点，逗号分隔",
-    "risk_warning": "风险提示",
-    "buy_reason": "操作理由，引用交易理念",
+    "analysis_summary": "100 kelimelik kapsamlı analiz özeti",
+    "key_points": "3-5 temel nokta, virgülle ayrılmış",
+    "risk_warning": "Risk uyarısı",
+    "buy_reason": "İşlem gerekçesi, işlem felsefesine atıfta bulunarak",
 
-    "trend_analysis": "走势形态分析",
-    "short_term_outlook": "短期1-3日展望",
-    "medium_term_outlook": "中期1-2周展望",
-    "technical_analysis": "技术面综合分析",
-    "ma_analysis": "均线系统分析",
-    "volume_analysis": "量能分析",
-    "pattern_analysis": "K线形态分析",
-    "fundamental_analysis": "基本面分析",
-    "sector_position": "板块行业分析",
-    "company_highlights": "公司亮点/风险",
-    "news_summary": "新闻摘要",
-    "market_sentiment": "市场情绪",
-    "hot_topics": "相关热点",
+    "trend_analysis": "Trend şekil analizi",
+    "short_term_outlook": "Kısa vadeli 1-3 günlük görünüm",
+    "medium_term_outlook": "Orta vadeli 1-2 haftalık görünüm",
+    "technical_analysis": "Teknik genel analiz",
+    "ma_analysis": "Hareketli ortalama sistemi analizi",
+    "volume_analysis": "Hacim analizi",
+    "pattern_analysis": "Mum çubuğu formasyon analizi",
+    "fundamental_analysis": "Temel analiz",
+    "sector_position": "Sektör analizi",
+    "company_highlights": "Şirket öne çıkanlar/riskler",
+    "news_summary": "Haber özeti",
+    "market_sentiment": "Piyasa duyarlılığı",
+    "hot_topics": "İlgili gündem konuları",
 
     "search_performed": true/false,
-    "data_sources": "数据来源说明"
+    "data_sources": "Veri kaynağı açıklaması"
 }
 ```
 
-## 评分标准
+## Puanlama Kriterleri
 
-### 强烈买入（80-100分）：
-- ✅ 多头排列：MA5 > MA10 > MA20
-- ✅ 低乖离率：<2%，最佳买点
-- ✅ 缩量回调或放量突破
-- ✅ 筹码集中健康
-- ✅ 消息面有利好催化
+### Güçlü Al (80-100 puan):
+- ✅ Boğa dizilimi: MA5 > MA10 > MA20
+- ✅ Düşük sapma oranı: <%2, en iyi alım noktası
+- ✅ Azalan hacimli geri çekilme veya artan hacimli kırılma
+- ✅ Çip yoğunluğu sağlıklı
+- ✅ Haberlerde olumlu katalizör var
 
-### 买入（60-79分）：
-- ✅ 多头排列或弱势多头
-- ✅ 乖离率 <5%
-- ✅ 量能正常
-- ⚪ 允许一项次要条件不满足
+### Al (60-79 puan):
+- ✅ Boğa dizilimi veya zayıf boğa
+- ✅ Sapma oranı <%5
+- ✅ Hacim normal
+- ⚪ Bir ikincil koşulun karşılanmamasına izin verilir
 
-### 观望（40-59分）：
-- ⚠️ 乖离率 >5%（追高风险）
-- ⚠️ 均线缠绕趋势不明
-- ⚠️ 有风险事件
+### İzle (40-59 puan):
+- ⚠️ Sapma oranı >%5 (fiyat kovalama riski)
+- ⚠️ Hareketli ortalamalar iç içe, trend belirsiz
+- ⚠️ Risk olayları mevcut
 
-### 卖出/减仓（0-39分）：
-- ❌ 空头排列
-- ❌ 跌破MA20
-- ❌ 放量下跌
-- ❌ 重大利空
+### Sat/Azalt (0-39 puan):
+- ❌ Ayı dizilimi
+- ❌ MA20 altına düşüş
+- ❌ Artan hacimle düşüş
+- ❌ Büyük olumsuzluklar
 
-## 决策仪表盘核心原则
+## Karar Paneli Temel İlkeleri
 
-1. **核心结论先行**：一句话说清该买该卖
-2. **分持仓建议**：空仓者和持仓者给不同建议
-3. **精确狙击点**：必须给出具体价格，不说模糊的话
-4. **检查清单可视化**：用 ✅⚠️❌ 明确显示每项检查结果
-5. **风险优先级**：舆情中的风险点要醒目标出"""
+1. **Temel sonuç önce**: Tek cümleyle al mı sat mı net söyleyin
+2. **Pozisyona göre öneri**: Pozisyonsuz ve pozisyonlu yatırımcıya farklı öneriler
+3. **Kesin hedef noktaları**: Spesifik fiyatlar verilmeli, belirsiz ifadeler kullanılmamalı
+4. **Kontrol listesi görselleştirme**: Her kontrol sonucunu ✅⚠️❌ ile net gösterin
+5. **Risk önceliği**: Haberlerdeki risk noktaları belirgin şekilde işaretlenmeli"""
 
     def __init__(self, api_key: Optional[str] = None):
         """Initialize LLM Analyzer via LiteLLM.
@@ -919,27 +921,27 @@ class GeminiAnalyzer:
         
         # 优先从上下文获取股票名称（由 main.py 传入）
         name = context.get('stock_name')
-        if not name or name.startswith('股票'):
+        if not name or name.startswith('Hisse'):
             # 备选：从 realtime 中获取
             if 'realtime' in context and context['realtime'].get('name'):
                 name = context['realtime']['name']
             else:
                 # 最后从映射表获取
-                name = STOCK_NAME_MAP.get(code, f'股票{code}')
+                name = STOCK_NAME_MAP.get(code, f'Hisse{code}')
         
-        # 如果模型不可用，返回默认结果
+        # Model kullanilamiyorsa varsayilan sonuc dondur
         if not self.is_available():
             return AnalysisResult(
                 code=code,
                 name=name,
                 sentiment_score=50,
-                trend_prediction='震荡',
-                operation_advice='持有',
-                confidence_level='低',
-                analysis_summary='AI 分析功能未启用（未配置 API Key）',
-                risk_warning='请配置 LLM API Key（GEMINI_API_KEY/ANTHROPIC_API_KEY/OPENAI_API_KEY）后重试',
+                trend_prediction='Yatay',
+                operation_advice='Tut',
+                confidence_level='Dusuk',
+                analysis_summary='AI analiz islevi etkinlestirilmedi (API Key yapilandirilmamis)',
+                risk_warning='Lutfen LLM API Key (GEMINI_API_KEY/ANTHROPIC_API_KEY/OPENAI_API_KEY) yapilandirip tekrar deneyin',
                 success=False,
-                error_message='LLM API Key 未配置',
+                error_message='LLM API Key yapilandirilmamis',
                 model_used=None,
             )
         
@@ -1027,16 +1029,16 @@ class GeminiAnalyzer:
             return result
             
         except Exception as e:
-            logger.error(f"AI 分析 {name}({code}) 失败: {e}")
+            logger.error(f"AI analiz {name}({code}) basarisiz: {e}")
             return AnalysisResult(
                 code=code,
                 name=name,
                 sentiment_score=50,
-                trend_prediction='震荡',
-                operation_advice='持有',
-                confidence_level='低',
-                analysis_summary=f'分析过程出错: {str(e)[:100]}',
-                risk_warning='分析失败，请稍后重试或手动分析',
+                trend_prediction='Yatay',
+                operation_advice='Tut',
+                confidence_level='Dusuk',
+                analysis_summary=f'Analiz sirasinda hata olustu: {str(e)[:100]}',
+                risk_warning='Analiz basarisiz, lutfen daha sonra tekrar deneyin veya manuel analiz yapin',
                 success=False,
                 error_message=str(e),
                 model_used=None,
@@ -1058,65 +1060,65 @@ class GeminiAnalyzer:
             name: 股票名称（默认值，可能被上下文覆盖）
             news_context: 预先搜索的新闻内容
         """
-        language_rule = "Tüm çıktıyı yalnızca Türkçe üret."
+        language_rule = "Tum ciktiyi yalnizca Turkce uret."
         code = context.get('code', 'Unknown')
         
-        # 优先使用上下文中的股票名称（从 realtime_quote 获取）
+        # Baglamdan hisse adini al
         stock_name = context.get('stock_name', name)
-        if not stock_name or stock_name == f'股票{code}':
-            stock_name = STOCK_NAME_MAP.get(code, f'股票{code}')
+        if not stock_name or stock_name == f'Hisse{code}':
+            stock_name = STOCK_NAME_MAP.get(code, f'Hisse{code}')
             
         today = context.get('today', {})
         
-        # ========== 构建决策仪表盘格式的输入 ==========
-        prompt = f"""# 决策仪表盘分析请求
+        # ========== Karar Paneli formati olustur ==========
+        prompt = f"""# Karar Paneli Analiz Talebi
 
-## 📊 股票基础信息
-| 项目 | 数据 |
+## Hisse Temel Bilgileri
+| Madde | Veri |
 |------|------|
-| 股票代码 | **{code}** |
-| 股票名称 | **{stock_name}** |
-| 分析日期 | {context.get('date', '未知')} |
+| Hisse Kodu | **{code}** |
+| Hisse Adi | **{stock_name}** |
+| Analiz Tarihi | {context.get('date', 'Bilinmiyor')} |
 
 ---
 
-## 📈 技术面数据
+## Teknik Veriler
 
-### 今日行情
-| 指标 | 数值 |
+### Gunun Islem Verileri
+| Gosterge | Deger |
 |------|------|
-| 收盘价 | {today.get('close', 'N/A')} 元 |
-| 开盘价 | {today.get('open', 'N/A')} 元 |
-| 最高价 | {today.get('high', 'N/A')} 元 |
-| 最低价 | {today.get('low', 'N/A')} 元 |
-| 涨跌幅 | {today.get('pct_chg', 'N/A')}% |
-| 成交量 | {self._format_volume(today.get('volume'))} |
-| 成交额 | {self._format_amount(today.get('amount'))} |
+| Kapanis | {today.get('close', 'N/A')} |
+| Acilis | {today.get('open', 'N/A')} |
+| En Yuksek | {today.get('high', 'N/A')} |
+| En Dusuk | {today.get('low', 'N/A')} |
+| Degisim | {today.get('pct_chg', 'N/A')}% |
+| Islem Hacmi | {self._format_volume(today.get('volume'))} |
+| Islem Tutari | {self._format_amount(today.get('amount'))} |
 
-### 均线系统（关键判断指标）
-| 均线 | 数值 | 说明 |
+### Hareketli Ortalama Sistemi (Temel Gosterge)
+| Ortalama | Deger | Aciklama |
 |------|------|------|
-| MA5 | {today.get('ma5', 'N/A')} | 短期趋势线 |
-| MA10 | {today.get('ma10', 'N/A')} | 中短期趋势线 |
-| MA20 | {today.get('ma20', 'N/A')} | 中期趋势线 |
-| 均线形态 | {context.get('ma_status', '未知')} | 多头/空头/缠绕 |
+| MA5 | {today.get('ma5', 'N/A')} | Kisa vadeli trend cizgisi |
+| MA10 | {today.get('ma10', 'N/A')} | Kisa-orta vadeli trend cizgisi |
+| MA20 | {today.get('ma20', 'N/A')} | Orta vadeli trend cizgisi |
+| Ortalama Durumu | {context.get('ma_status', 'Bilinmiyor')} | Boga/Ayi/Ic Ice |
 """
         
         # 添加实时行情数据（量比、换手率等）
         if 'realtime' in context:
             rt = context['realtime']
             prompt += f"""
-### 实时行情增强数据
-| 指标 | 数值 | 解读 |
+### Anlik Piyasa Verileri
+| Gosterge | Deger | Yorum |
 |------|------|------|
-| 当前价格 | {rt.get('price', 'N/A')} 元 | |
-| **量比** | **{rt.get('volume_ratio', 'N/A')}** | {rt.get('volume_ratio_desc', '')} |
-| **换手率** | **{rt.get('turnover_rate', 'N/A')}%** | |
-| 市盈率(动态) | {rt.get('pe_ratio', 'N/A')} | |
-| 市净率 | {rt.get('pb_ratio', 'N/A')} | |
-| 总市值 | {self._format_amount(rt.get('total_mv'))} | |
-| 流通市值 | {self._format_amount(rt.get('circ_mv'))} | |
-| 60日涨跌幅 | {rt.get('change_60d', 'N/A')}% | 中期表现 |
+| Mevcut Fiyat | {rt.get('price', 'N/A')} | |
+| **Hacim Orani** | **{rt.get('volume_ratio', 'N/A')}** | {rt.get('volume_ratio_desc', '')} |
+| **Devir Orani** | **{rt.get('turnover_rate', 'N/A')}%** | |
+| F/K (Dinamik) | {rt.get('pe_ratio', 'N/A')} | |
+| PD/DD | {rt.get('pb_ratio', 'N/A')} | |
+| Toplam Piyasa Degeri | {self._format_amount(rt.get('total_mv'))} | |
+| Dolasim Piyasa Degeri | {self._format_amount(rt.get('circ_mv'))} | |
+| 60 Gunluk Degisim | {rt.get('change_60d', 'N/A')}% | Orta vadeli performans |
 """
 
         # 添加财报与分红（价值投资口径）
@@ -1149,17 +1151,17 @@ class GeminiAnalyzer:
             ttm_count = dividend_metrics.get("ttm_event_count", "N/A")
             report_date = financial_report.get("report_date", "N/A")
             prompt += f"""
-### 财报与分红（价值投资口径）
-| 指标 | 数值 | 说明 |
+### Mali Tablo ve Temettu (Deger Yatirimi)
+| Gosterge | Deger | Aciklama |
 |------|------|------|
-| 最近报告期 | {report_date} | 来自结构化财报字段 |
-| 营业收入 | {financial_report.get('revenue', 'N/A')} | |
-| 归母净利润 | {financial_report.get('net_profit_parent', 'N/A')} | |
-| 经营现金流 | {financial_report.get('operating_cash_flow', 'N/A')} | |
+| Son Rapor Donemi | {report_date} | Yapilandirilmis mali tablo alanindan |
+| Gelir | {financial_report.get('revenue', 'N/A')} | |
+| Ana Ortaklik Net Kari | {financial_report.get('net_profit_parent', 'N/A')} | |
+| Isletme Nakit Akisi | {financial_report.get('operating_cash_flow', 'N/A')} | |
 | ROE | {financial_report.get('roe', 'N/A')} | |
-| 近12个月每股现金分红 | {ttm_cash} | 仅现金分红、税前口径 |
-| TTM 股息率 | {ttm_yield} | 公式：近12个月每股现金分红 / 当前价格 × 100% |
-| TTM 分红事件数 | {ttm_count} | |
+| Son 12 Ay Hisse Basina Nakit Temettu | {ttm_cash} | Yalnizca nakit temettu, vergi oncesi |
+| TTM Temettu Verimi | {ttm_yield} | Formul: Son 12 ay hisse basina nakit temettu / Mevcut fiyat x 100% |
+| TTM Temettu Olay Sayisi | {ttm_count} | |
 
 > 若上述字段为 N/A 或缺失，请明确写“数据缺失，无法判断”，禁止编造。
 """
@@ -1169,38 +1171,38 @@ class GeminiAnalyzer:
             chip = context['chip']
             profit_ratio = chip.get('profit_ratio', 0)
             prompt += f"""
-### 筹码分布数据（效率指标）
-| 指标 | 数值 | 健康标准 |
+### Cip Dagilim Verileri (Verimlilik Gostergesi)
+| Gosterge | Deger | Saglikli Standart |
 |------|------|----------|
-| **获利比例** | **{profit_ratio:.1%}** | 70-90%时警惕 |
-| 平均成本 | {chip.get('avg_cost', 'N/A')} 元 | 现价应高于5-15% |
-| 90%筹码集中度 | {chip.get('concentration_90', 0):.2%} | <15%为集中 |
-| 70%筹码集中度 | {chip.get('concentration_70', 0):.2%} | |
-| 筹码状态 | {chip.get('chip_status', '未知')} | |
+| **Kar Orani** | **{profit_ratio:.1%}** | %70-90 da dikkatli olun |
+| Ortalama Maliyet | {chip.get('avg_cost', 'N/A')} 元 | Fiyat %5-15 uzerinde olmali |
+| %90 Cip Yogunlugu | {chip.get('concentration_90', 0):.2%} | <%15 yogunlasmis |
+| %70 Cip Yogunlugu | {chip.get('concentration_70', 0):.2%} | |
+| Cip Durumu | {chip.get('chip_status', 'Bilinmiyor')} | |
 """
         
         # 添加趋势分析结果（基于交易理念的预判）
         if 'trend_analysis' in context:
             trend = context['trend_analysis']
-            bias_warning = "🚨 超过5%，严禁追高！" if trend.get('bias_ma5', 0) > 5 else "✅ 安全范围"
+            bias_warning = "🚨 %5 i asiyor, fiyat kovalamak kesinlikle yasak!" if trend.get('bias_ma5', 0) > 5 else "✅ Guvenli aralik"
             prompt += f"""
-### 趋势分析预判（基于交易理念）
-| 指标 | 数值 | 判定 |
+### Trend Analizi On Degerlendirme
+| Gosterge | Deger | Degerlendirme |
 |------|------|------|
-| 趋势状态 | {trend.get('trend_status', '未知')} | |
-| 均线排列 | {trend.get('ma_alignment', '未知')} | MA5>MA10>MA20为多头 |
-| 趋势强度 | {trend.get('trend_strength', 0)}/100 | |
-| **乖离率(MA5)** | **{trend.get('bias_ma5', 0):+.2f}%** | {bias_warning} |
-| 乖离率(MA10) | {trend.get('bias_ma10', 0):+.2f}% | |
-| 量能状态 | {trend.get('volume_status', '未知')} | {trend.get('volume_trend', '')} |
-| 系统信号 | {trend.get('buy_signal', '未知')} | |
-| 系统评分 | {trend.get('signal_score', 0)}/100 | |
+| Trend Durumu | {trend.get('trend_status', 'Bilinmiyor')} | |
+| Ortalama Dizilimi | {trend.get('ma_alignment', 'Bilinmiyor')} | MA5>MA10>MA20 boga |
+| Trend Gucu | {trend.get('trend_strength', 0)}/100 | |
+| **Sapma Orani(MA5)** | **{trend.get('bias_ma5', 0):+.2f}%** | {bias_warning} |
+| Sapma Orani(MA10) | {trend.get('bias_ma10', 0):+.2f}% | |
+| Hacim Durumu | {trend.get('volume_status', 'Bilinmiyor')} | {trend.get('volume_trend', '')} |
+| Sistem Sinyali | {trend.get('buy_signal', 'Bilinmiyor')} | |
+| Sistem Puani | {trend.get('signal_score', 0)}/100 | |
 
-#### 系统分析理由
-**买入理由**：
+#### Sistem Analiz Gerekcesi
+**Alim Gerekcesi**:
 {chr(10).join('- ' + r for r in trend.get('signal_reasons', ['无'])) if trend.get('signal_reasons') else '- 无'}
 
-**风险因素**：
+**Risk Faktorleri**:
 {chr(10).join('- ' + r for r in trend.get('risk_factors', ['无'])) if trend.get('risk_factors') else '- 无'}
 """
         
@@ -1208,9 +1210,9 @@ class GeminiAnalyzer:
         if 'yesterday' in context:
             volume_change = context.get('volume_change_ratio', 'N/A')
             prompt += f"""
-### 量价变化
-- 成交量较昨日变化：{volume_change}倍
-- 价格较昨日变化：{context.get('price_change_ratio', 'N/A')}%
+### Hacim-Fiyat Degisimi
+- Islem hacmi dunku degisim: {volume_change} kat
+- Fiyat dunku degisim: {context.get('price_change_ratio', 'N/A')}%
 """
         
         # 添加新闻搜索结果（重点区域）
@@ -1233,18 +1235,18 @@ class GeminiAnalyzer:
         prompt += """
 ---
 
-## 📰 舆情情报
+## Haber Istihbarati
 """
         if news_context:
             prompt += f"""
-以下是 **{stock_name}({code})** 近{news_window_days}日的新闻搜索结果，请重点提取：
-1. 🚨 **风险警报**：减持、处罚、利空
-2. 🎯 **利好催化**：业绩、合同、政策
-3. 📊 **业绩预期**：年报预告、业绩快报
-4. 🕒 **时间规则（强制）**：
-   - 输出到 `risk_alerts` / `positive_catalysts` / `latest_news` 的每一条都必须带具体日期（YYYY-MM-DD）
-   - 超出近{news_window_days}日窗口的新闻一律忽略
-   - 时间未知、无法确定发布日期的新闻一律忽略
+Asagida **{stock_name}({code})** son {news_window_days} gunluk haber arama sonuclari, lutfen sunlari ozellikle cikarin:
+1. 🚨 **Risk Uyarilari**: Hisse satisi, cezalar, olumsuzluklar
+2. 🎯 **Olumlu Katalizorler**: Kazanclar, sozlesmeler, politikalar
+3. 📊 **Kazanc Beklentileri**: Yillik rapor ongorusu, kazanc hizli raporu
+4. 🕒 **Zaman Kurallari (Zorunlu)**:
+   - `risk_alerts` / `positive_catalysts` / `latest_news` e cikti verilen her madde belirli tarih (YYYY-MM-DD) icermelidir
+   - 超出son {news_window_days} gun penceresini asan haberler yok sayilir
+   - Zamani bilinmeyen, yayin tarihi belirlenemeyen haberler yok sayilir
 
 ```
 {news_context}
@@ -1252,15 +1254,15 @@ class GeminiAnalyzer:
 """
         else:
             prompt += """
-未搜索到该股票近期的相关新闻。请主要依据技术面数据进行分析。
+Bu hisse icin yakin donem ilgili haber bulunamadi. Lutfen agirlikli olarak teknik verilere dayali analiz yapin.
 """
 
         # 注入缺失数据警告
         if context.get('data_missing'):
             prompt += """
-⚠️ **数据缺失警告**
-由于接口限制，当前无法获取完整的实时行情和技术指标数据。
-请 **忽略上述表格中的 N/A 数据**，重点依据 **【📰 舆情情报】** 中的新闻进行基本面和情绪面分析。
+⚠️ **Veri Eksik Uyarisi**
+Arayuz kisitlamalari nedeniyle su anda tam anlik piyasa ve teknik gosterge verileri alinamiyor.
+Lutfen **yukaridaki tablolardaki N/A verilerini goz ardi edin**, agirlikli olarak **Haber Istihbarati** bolumundeki haberlere dayanarak temel analiz yapin.
 在回答技术面问题（如均线、乖离率）时，请直接说明“数据缺失，无法判断”，**严禁编造数据**。
 """
 
@@ -1268,67 +1270,69 @@ class GeminiAnalyzer:
         prompt += f"""
 ---
 
-## ✅ 分析任务
+## Analiz Gorevi
 
-请为 **{stock_name}({code})** 生成【决策仪表盘】，严格按照 JSON 格式输出。
+**{stock_name}({code})**  icin Karar Paneli olusturun, kesinlikle JSON formatinda cikti verin.
 """
         if context.get('is_index_etf'):
             prompt += """
-> ⚠️ **指数/ETF 分析约束**：该标的为指数跟踪型 ETF 或市场指数。
-> - 风险分析仅关注：**指数走势、跟踪误差、市场流动性**
-> - 严禁将基金公司的诉讼、声誉、高管变动纳入风险警报
-> - 业绩预期基于**指数成分股整体表现**，而非基金公司财报
-> - `risk_alerts` 中不得出现基金管理人相关的公司经营风险
+> ⚠️ **Endeks/ETF Analiz Kisitlamasi**: Bu varlik endeks takip tipi ETF veya piyasa endeksidir.
+> - Risk analizi yalnizca sunlara odaklanir: **Endeks trendi, takip hatasi, piyasa likiditesi**
+> - Fon sirketinin davalari, itibari, yonetici degisiklikleri risk uyarilarina dahil edilmez
+> - Kazanc beklentisi **endeks bilesen hisselerinin genel performansina** dayalidir
+> - `risk_alerts` icinde fon yoneticisiyle ilgili sirket isletme riskleri yer almamalidir
 
 """
         prompt += f"""
-### ⚠️ 重要：输出正确的股票名称格式
+### ⚠️ Onemli: Dogru hisse adi formatinda cikti verin
 正确的股票名称格式为“股票名称（股票代码）”，例如“贵州茅台（600519）”。
-如果上方显示的股票名称为"股票{code}"或不正确，请在分析开头**明确输出该股票的正确中文全称**。
+如果上方显示的股票名称为"股票{code}" veya yanlissa, analiz basinda **hissenin dogru tam adini belirtin**.
 
-### 重点关注（必须明确回答）：
-1. ❓ 是否满足 MA5>MA10>MA20 多头排列？
-2. ❓ 当前乖离率是否在安全范围内（<5%）？—— 超过5%必须标注"严禁追高"
-3. ❓ 量能是否配合（缩量回调/放量突破）？
-4. ❓ 筹码结构是否健康？
-5. ❓ 消息面有无重大利空？（减持、处罚、业绩变脸等）
+### Odak Noktalari (Kesinlikle cevaplanmali):
+1. ❓ MA5>MA10>MA20 boga dizilimi saglaniyor mu?
+2. ❓ Mevcut sapma orani guvenli aralikta mi (<%5)? — %5 i asarsa "fiyat kovalamak yasak" isaretlenmeli
+3. ❓ Hacim destekliyor mu (azalan hacimli geri cekilme/artan hacimli kirilma)?
+4. ❓ Cip yapisi saglikli mi?
+5. ❓ Haberlerde buyuk olumsuzluk var mi? (Hisse satisi, ceza, kazanc dususu vb.)
 
-### 决策仪表盘要求：
-- **股票名称**：必须输出正确的中文全称（如"贵州茅台"而非"股票600519"）
-- **核心结论**：一句话说清该买/该卖/该等
-- **持仓分类建议**：空仓者怎么做 vs 持仓者怎么做
-- **具体狙击点位**：买入价、止损价、目标价（精确到分）
-- **检查清单**：每项用 ✅/⚠️/❌ 标记
-- **消息面时间合规**：`latest_news`、`risk_alerts`、`positive_catalysts` 不得包含超出近{news_window_days}日或时间未知的信息
+### Karar Paneli Gereksinimleri:
+- **Hisse adi**: Dogru tam adi cikti verin
+- **Temel sonuc**: Tek cumleyle al/sat/bekle net soyleyin
+- **Pozisyona gore oneri**: Pozisyonsuz vs pozisyonlu yatirimci ne yapmali
+- **Spesifik hedef noktalari**: Alim fiyati, zarar durdurma fiyati, hedef fiyat
+- **Kontrol listesi**: Her maddeyi ✅/⚠️/❌ ile isaretleyin
+- **Haber zaman uyumu**: `latest_news`, `risk_alerts`, `positive_catalysts` son {news_window_days} gunu asan veya zamani bilinmeyen bilgi icermemeli
 
-请输出完整的 JSON 格式决策仪表盘。"""
+KRITIK: Tum ciktiyi yalnizca Turkce uret.
+
+Lutfen tam JSON formatinda Karar Paneli cikti verin."""
         
         return prompt
     
     def _format_volume(self, volume: Optional[float]) -> str:
-        """格式化成交量显示"""
+        """Islem hacmi formatla"""
         if volume is None:
             return 'N/A'
         if volume >= 1e8:
-            return f"{volume / 1e8:.2f} 亿股"
+            return f"{volume / 1e8:.2f}  Milyar Lot"
         elif volume >= 1e4:
-            return f"{volume / 1e4:.2f} 万股"
+            return f"{volume / 1e4:.2f}  Bin Lot"
         else:
-            return f"{volume:.0f} 股"
+            return f"{volume:.0f}  Lot"
     
     def _format_amount(self, amount: Optional[float]) -> str:
-        """格式化成交额显示"""
+        """Islem tutari formatla"""
         if amount is None:
             return 'N/A'
         if amount >= 1e8:
-            return f"{amount / 1e8:.2f} 亿元"
+            return f"{amount / 1e8:.2f}  Milyar"
         elif amount >= 1e4:
-            return f"{amount / 1e4:.2f} 万元"
+            return f"{amount / 1e4:.2f}  Bin"
         else:
-            return f"{amount:.0f} 元"
+            return f"{amount:.0f}"
 
     def _format_percent(self, value: Optional[float]) -> str:
-        """格式化百分比显示"""
+        """Yuzde formatla"""
         if value is None:
             return 'N/A'
         try:
@@ -1337,7 +1341,7 @@ class GeminiAnalyzer:
             return 'N/A'
 
     def _format_price(self, value: Optional[float]) -> str:
-        """格式化价格显示"""
+        """Fiyat formatla"""
         if value is None:
             return 'N/A'
         try:
@@ -1346,7 +1350,7 @@ class GeminiAnalyzer:
             return 'N/A'
 
     def _build_market_snapshot(self, context: Dict[str, Any]) -> Dict[str, Any]:
-        """构建当日行情快照（展示用）"""
+        """Gunluk islem anlk goruntusu olustur"""
         today = context.get('today', {}) or {}
         realtime = context.get('realtime', {}) or {}
         yesterday = context.get('yesterday', {}) or {}
@@ -1370,7 +1374,7 @@ class GeminiAnalyzer:
                 change_amount = None
 
         snapshot = {
-            "date": context.get('date', '未知'),
+            "date": context.get('date', 'Bilinmiyor'),
             "close": self._format_price(close),
             "open": self._format_price(today.get('open')),
             "high": self._format_price(high),
@@ -1399,20 +1403,20 @@ class GeminiAnalyzer:
 
     def _build_integrity_complement_prompt(self, missing_fields: List[str]) -> str:
         """Build complement instruction for missing mandatory fields."""
-        lines = ["### 补全要求：请在上方分析基础上补充以下必填内容，并输出完整 JSON："]
+        lines = ["### Tamamlama Gereksinimi: Lutfen yukaridaki analiz temelinde asagidaki zorunlu alanlari ekleyin ve tam JSON cikti verin:"]
         for f in missing_fields:
             if f == "sentiment_score":
-                lines.append("- sentiment_score: 0-100 综合评分")
+                lines.append("- sentiment_score: 0-100 arasi genel puan")
             elif f == "operation_advice":
-                lines.append("- operation_advice: 买入/加仓/持有/减仓/卖出/观望")
+                lines.append("- operation_advice: Al/Artir/Tut/Azalt/Sat/Izle")
             elif f == "analysis_summary":
-                lines.append("- analysis_summary: 综合分析摘要")
+                lines.append("- analysis_summary: Genel analiz ozeti")
             elif f == "dashboard.core_conclusion.one_sentence":
-                lines.append("- dashboard.core_conclusion.one_sentence: 一句话决策")
+                lines.append("- dashboard.core_conclusion.one_sentence: Tek cumlelik karar")
             elif f == "dashboard.intelligence.risk_alerts":
-                lines.append("- dashboard.intelligence.risk_alerts: 风险警报列表（可为空数组）")
+                lines.append("- dashboard.intelligence.risk_alerts: Risk uyarilari listesi (bos dizi olabilir)")
             elif f == "dashboard.battle_plan.sniper_points.stop_loss":
-                lines.append("- dashboard.battle_plan.sniper_points.stop_loss: 止损价")
+                lines.append("- dashboard.battle_plan.sniper_points.stop_loss: Zarar durdurma fiyati")
         return "\n".join(lines)
 
     def _build_integrity_retry_prompt(
@@ -1426,7 +1430,7 @@ class GeminiAnalyzer:
         previous_output = previous_response.strip()
         return "\n\n".join([
             base_prompt,
-            "### 上一次输出如下，请在该输出基础上补齐缺失字段，并重新输出完整 JSON。不要省略已有字段：",
+            "### Onceki cikti asagidadir, lutfen eksik alanlari tamamlayin ve tam JSON i yeniden cikti verin. Mevcut alanlari atlamayin:",
             previous_output,
             complement,
         ])
@@ -1481,7 +1485,7 @@ class GeminiAnalyzer:
 
                 # 优先使用 AI 返回的股票名称（如果原名称无效或包含代码）
                 ai_stock_name = data.get('stock_name')
-                if ai_stock_name and (name.startswith('股票') or name == code or 'Unknown' in name):
+                if ai_stock_name and (name.startswith('Hisse') or name == code or 'Unknown' in name):
                     name = ai_stock_name
 
                 # 解析所有字段，使用默认值防止缺失
