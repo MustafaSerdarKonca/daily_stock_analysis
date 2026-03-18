@@ -1058,6 +1058,7 @@ class GeminiAnalyzer:
             name: 股票名称（默认值，可能被上下文覆盖）
             news_context: 预先搜索的新闻内容
         """
+        language_rule = "Tüm çıktıyı yalnızca Türkçe üret."
         code = context.get('code', 'Unknown')
         
         # 优先使用上下文中的股票名称（从 realtime_quote 获取）
