@@ -67,19 +67,19 @@ class ChannelDetector:
     def get_channel_name(channel: NotificationChannel) -> str:
         """获取渠道中文名称"""
         names = {
-            NotificationChannel.WECHAT: "企业微信",
-            NotificationChannel.FEISHU: "飞书",
+            NotificationChannel.WECHAT: "WeChat",
+            NotificationChannel.FEISHU: "Feishu",
             NotificationChannel.TELEGRAM: "Telegram",
-            NotificationChannel.EMAIL: "邮件",
+            NotificationChannel.EMAIL: "E-posta",
             NotificationChannel.PUSHOVER: "Pushover",
             NotificationChannel.PUSHPLUS: "PushPlus",
-            NotificationChannel.SERVERCHAN3: "Server酱3",
-            NotificationChannel.CUSTOM: "自定义Webhook",
-            NotificationChannel.DISCORD: "Discord机器人",
-            NotificationChannel.ASTRBOT: "ASTRBOT机器人",
-            NotificationChannel.UNKNOWN: "未知渠道",
+            NotificationChannel.SERVERCHAN3: "ServerChan3",
+            NotificationChannel.CUSTOM: "Ozel Webhook",
+            NotificationChannel.DISCORD: "Discord Bot",
+            NotificationChannel.ASTRBOT: "ASTRBOT Bot",
+            NotificationChannel.UNKNOWN: "Bilinmeyen Kanal",
         }
-        return names.get(channel, "未知渠道")
+        return names.get(channel, "Bilinmeyen Kanal")
 
 
 class NotificationService(
@@ -149,7 +149,7 @@ class NotificationService(
         # 检测所有已配置的渠道
         self._available_channels = self._detect_all_channels()
         if self._has_context_channel():
-            self._context_channels.append("钉钉会话")
+            self._context_channels.append("DingTalk")
 
         if not self._available_channels and not self._context_channels:
             logger.warning("未配置有效的通知渠道，将不发送推送通知")
@@ -280,7 +280,7 @@ class NotificationService(
         """获取所有已配置渠道的名称"""
         names = [ChannelDetector.get_channel_name(ch) for ch in self._available_channels]
         if self._has_context_channel():
-            names.append("钉钉会话")
+            names.append("DingTalk")
         return ', '.join(names)
 
     # ===== Context channel =====
@@ -502,9 +502,9 @@ class NotificationService(
 
         # 标题
         report_lines = [
-            f"# 📅 {report_date} 股票智能分析报告",
+            f"# 📅 {report_date} Hisse Senedi Akilli Analiz Raporu",
             "",
-            f"> 共分析 **{len(results)}** 只股票 | 报告生成时间：{datetime.now().strftime('%H:%M:%S')}",
+            f"> Toplam **{len(results)}** ** hisse |  Rapor olusturma zamani: {datetime.now().strftime('%H:%M:%S')}",
             "",
             "---",
             "",
@@ -524,14 +524,14 @@ class NotificationService(
         avg_score = sum(r.sentiment_score for r in results) / len(results) if results else 0
         
         report_lines.extend([
-            "## 📊 操作建议汇总",
+            "## Islem Onerisi Ozeti",
             "",
-            "| 指标 | 数值 |",
+            "| Gosterge | Deger |",
             "|------|------|",
-            f"| 🟢 建议买入/加仓 | **{buy_count}** 只 |",
-            f"| 🟡 建议持有/观望 | **{hold_count}** 只 |",
-            f"| 🔴 建议减仓/卖出 | **{sell_count}** 只 |",
-            f"| 📈 平均看多评分 | **{avg_score:.1f}** 分 |",
+            f"| 🟢 Al/Artir Onerisi | **{buy_count}**  adet |",
+            f"| 🟡 Tut/Izle Onerisi | **{hold_count}**  adet |",
+            f"| 🔴 Azalt/Sat Onerisi | **{sell_count}**  adet |",
+            f"| 📈 Ortalama Yukselis Puani | **{avg_score:.1f}**  puan |",
             "",
             "---",
             "",
@@ -539,15 +539,15 @@ class NotificationService(
         
         # Issue #262: summary_only 时仅输出摘要，跳过个股详情
         if self._report_summary_only:
-            report_lines.extend(["## 📊 分析结果摘要", ""])
+            report_lines.extend(["## Analiz Sonuclari Ozeti", ""])
             for r in sorted_results:
                 emoji = r.get_emoji()
                 report_lines.append(
                     f"{emoji} **{r.name}({r.code})**: {r.operation_advice} | "
-                    f"评分 {r.sentiment_score} | {r.trend_prediction}"
+                    f"Puan {r.sentiment_score} | {r.trend_prediction}"
                 )
         else:
-            report_lines.extend(["## 📈 个股详细分析", ""])
+            report_lines.extend(["## Detayli Hisse Analizi", ""])
             # 逐个股票的详细分析
             for result in sorted_results:
                 emoji = result.get_emoji()
@@ -556,7 +556,7 @@ class NotificationService(
                 report_lines.extend([
                     f"### {emoji} {result.name} ({result.code})",
                     "",
-                    f"**操作建议：{result.operation_advice}** | **综合评分：{result.sentiment_score}分** | **趋势预测：{result.trend_prediction}** | **置信度：{confidence_stars}**",
+                    f"**Islem Onerisi: {result.operation_advice}** | **Genel Puan: {result.sentiment_score} puan** | **Trend Tahmini: {result.trend_prediction}** | **Guvenilirlik: {confidence_stars}**",
                     "",
                 ])
 
@@ -565,21 +565,21 @@ class NotificationService(
                 # 核心看点
                 if hasattr(result, 'key_points') and result.key_points:
                     report_lines.extend([
-                        f"**🎯 核心看点**：{result.key_points}",
+                        f"**🎯 Temel Noktalar**: {result.key_points}",
                         "",
                     ])
                 
                 # 买入/卖出理由
                 if hasattr(result, 'buy_reason') and result.buy_reason:
                     report_lines.extend([
-                        f"**💡 操作理由**：{result.buy_reason}",
+                        f"**💡 Islem Gerekcesi**: {result.buy_reason}",
                         "",
                     ])
                 
                 # 走势分析
                 if hasattr(result, 'trend_analysis') and result.trend_analysis:
                     report_lines.extend([
-                        "#### 📉 走势分析",
+                        "#### Trend Analizi",
                         f"{result.trend_analysis}",
                         "",
                     ])
@@ -587,12 +587,12 @@ class NotificationService(
                 # 短期/中期展望
                 outlook_lines = []
                 if hasattr(result, 'short_term_outlook') and result.short_term_outlook:
-                    outlook_lines.append(f"- **短期（1-3日）**：{result.short_term_outlook}")
+                    outlook_lines.append(f"- **Kisa Vadeli (1-3 gun)**: {result.short_term_outlook}")
                 if hasattr(result, 'medium_term_outlook') and result.medium_term_outlook:
-                    outlook_lines.append(f"- **中期（1-2周）**：{result.medium_term_outlook}")
+                    outlook_lines.append(f"- **Orta Vadeli (1-2 hafta)**: {result.medium_term_outlook}")
                 if outlook_lines:
                     report_lines.extend([
-                        "#### 🔮 市场展望",
+                        "#### Piyasa Gorunumu",
                         *outlook_lines,
                         "",
                     ])
@@ -600,16 +600,16 @@ class NotificationService(
                 # 技术面分析
                 tech_lines = []
                 if result.technical_analysis:
-                    tech_lines.append(f"**综合**：{result.technical_analysis}")
+                    tech_lines.append(f"**Genel**: {result.technical_analysis}")
                 if hasattr(result, 'ma_analysis') and result.ma_analysis:
-                    tech_lines.append(f"**均线**：{result.ma_analysis}")
+                    tech_lines.append(f"**Hareketli Ortalama**: {result.ma_analysis}")
                 if hasattr(result, 'volume_analysis') and result.volume_analysis:
-                    tech_lines.append(f"**量能**：{result.volume_analysis}")
+                    tech_lines.append(f"**Hacim**: {result.volume_analysis}")
                 if hasattr(result, 'pattern_analysis') and result.pattern_analysis:
-                    tech_lines.append(f"**形态**：{result.pattern_analysis}")
+                    tech_lines.append(f"**Formasyon**: {result.pattern_analysis}")
                 if tech_lines:
                     report_lines.extend([
-                        "#### 📊 技术面分析",
+                        "#### Teknik Analiz",
                         *tech_lines,
                         "",
                     ])
@@ -619,12 +619,12 @@ class NotificationService(
                 if hasattr(result, 'fundamental_analysis') and result.fundamental_analysis:
                     fund_lines.append(result.fundamental_analysis)
                 if hasattr(result, 'sector_position') and result.sector_position:
-                    fund_lines.append(f"**板块地位**：{result.sector_position}")
+                    fund_lines.append(f"**Sektor Konumu**: {result.sector_position}")
                 if hasattr(result, 'company_highlights') and result.company_highlights:
-                    fund_lines.append(f"**公司亮点**：{result.company_highlights}")
+                    fund_lines.append(f"**Sirket One Cikanlar**: {result.company_highlights}")
                 if fund_lines:
                     report_lines.extend([
-                        "#### 🏢 基本面分析",
+                        "#### Temel Analiz",
                         *fund_lines,
                         "",
                     ])
@@ -632,14 +632,14 @@ class NotificationService(
                 # 消息面/情绪面
                 news_lines = []
                 if result.news_summary:
-                    news_lines.append(f"**新闻摘要**：{result.news_summary}")
+                    news_lines.append(f"**Haber Ozeti**: {result.news_summary}")
                 if hasattr(result, 'market_sentiment') and result.market_sentiment:
-                    news_lines.append(f"**市场情绪**：{result.market_sentiment}")
+                    news_lines.append(f"**Piyasa Duyarliligi**: {result.market_sentiment}")
                 if hasattr(result, 'hot_topics') and result.hot_topics:
-                    news_lines.append(f"**相关热点**：{result.hot_topics}")
+                    news_lines.append(f"**Ilgili Gundem**: {result.hot_topics}")
                 if news_lines:
                     report_lines.extend([
-                        "#### 📰 消息面/情绪面",
+                        "#### Haber/Duyarlilik",
                         *news_lines,
                         "",
                     ])
@@ -647,7 +647,7 @@ class NotificationService(
                 # 综合分析
                 if result.analysis_summary:
                     report_lines.extend([
-                        "#### 📝 综合分析",
+                        "#### Kapsamli Analiz",
                         result.analysis_summary,
                         "",
                     ])
@@ -655,21 +655,21 @@ class NotificationService(
                 # 风险提示
                 if hasattr(result, 'risk_warning') and result.risk_warning:
                     report_lines.extend([
-                        f"⚠️ **风险提示**：{result.risk_warning}",
+                        f"⚠️ **Risk Uyarisi**: {result.risk_warning}",
                         "",
                     ])
                 
                 # 数据来源说明
                 if hasattr(result, 'search_performed') and result.search_performed:
-                    report_lines.append("*🔍 已执行联网搜索*")
+                    report_lines.append("*🔍 Internet araması yapildi*")
                 if hasattr(result, 'data_sources') and result.data_sources:
-                    report_lines.append(f"*📋 数据来源：{result.data_sources}*")
+                    report_lines.append(f"*📋 Veri Kaynagi: {result.data_sources}*")
                 
                 # 错误信息（如果有）
                 if not result.success and result.error_message:
                     report_lines.extend([
                         "",
-                        f"❌ **分析异常**：{result.error_message[:100]}",
+                        f"❌ **Analiz Hatasi**: {result.error_message[:100]}",
                     ])
                 
                 report_lines.extend([
@@ -681,7 +681,7 @@ class NotificationService(
         # 底部信息（去除免责声明）
         report_lines.extend([
             "",
-            f"*报告生成时间：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*",
+            f"*Rapor olusturma zamani: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*",
         ])
         
         return "\n".join(report_lines)
@@ -702,8 +702,8 @@ class NotificationService(
             return str(value)
         if not value or value == 'N/A':
             return value
-        prefixes = ['理想买入点：', '次优买入点：', '止损位：', '目标位：',
-                     '理想买入点:', '次优买入点:', '止损位:', '目标位:']
+        prefixes = ['Ideal alim noktasi: ', 'Ikinci alim noktasi: ', 'Zarar durdurma: ', 'Hedef: ',
+                     'Ideal alim noktasi:', 'Ikinci alim noktasi:', 'Zarar durdurma:', 'Hedef:']
         for prefix in prefixes:
             if value.startswith(prefix):
                 return value[len(prefix):]
@@ -725,33 +725,33 @@ class NotificationService(
 
         # Advice-first lookup (exact match takes priority)
         advice_map = {
-            '强烈买入': ('强烈买入', '💚', '强买'),
-            '买入': ('买入', '🟢', '买入'),
-            '加仓': ('买入', '🟢', '买入'),
-            '持有': ('持有', '🟡', '持有'),
-            '观望': ('观望', '⚪', '观望'),
-            '减仓': ('减仓', '🟠', '减仓'),
-            '卖出': ('卖出', '🔴', '卖出'),
-            '强烈卖出': ('卖出', '🔴', '卖出'),
+            '强烈买入': ('Guclu Al', '💚', 'Guclu Al'),
+            '买入': ('Al', '🟢', 'Al'),
+            '加仓': ('Al', '🟢', 'Al'),
+            '持有': ('Tut', '🟡', 'Tut'),
+            '观望': ('Izle', '⚪', 'Izle'),
+            '减仓': ('Azalt', '🟠', 'Azalt'),
+            '卖出': ('Sat', '🔴', 'Sat'),
+            '强烈卖出': ('Sat', '🔴', 'Sat'),
         }
         if advice in advice_map:
             return advice_map[advice]
 
         # Score-based fallback when advice is unrecognized
         if score >= 80:
-            return ('强烈买入', '💚', '强买')
+            return ('Guclu Al', '💚', 'Guclu Al')
         elif score >= 65:
-            return ('买入', '🟢', '买入')
+            return ('Al', '🟢', 'Al')
         elif score >= 55:
-            return ('持有', '🟡', '持有')
+            return ('Tut', '🟡', 'Tut')
         elif score >= 45:
-            return ('观望', '⚪', '观望')
+            return ('Izle', '⚪', 'Izle')
         elif score >= 35:
-            return ('减仓', '🟠', '减仓')
+            return ('Azalt', '🟠', 'Azalt')
         elif score < 35:
-            return ('卖出', '🔴', '卖出')
+            return ('Sat', '🔴', 'Sat')
         else:
-            return ('观望', '⚪', '观望')
+            return ('Izle', '⚪', 'Izle')
     
     def generate_dashboard_report(
         self,
@@ -759,7 +759,7 @@ class NotificationService(
         report_date: Optional[str] = None
     ) -> str:
         """
-        生成决策仪表盘格式的日报（详细版）
+        生成Karar Paneli格式的日报（详细版）
 
         格式：市场概览 + 重要信息 + 核心结论 + 数据透视 + 作战计划
 
@@ -768,7 +768,7 @@ class NotificationService(
             report_date: 报告日期（默认今天）
 
         Returns:
-            Markdown 格式的决策仪表盘日报
+            Markdown 格式的Karar Paneli日报
         """
         config = get_config()
         if getattr(config, 'report_renderer_enabled', False) and results:
@@ -795,16 +795,16 @@ class NotificationService(
         hold_count = sum(1 for r in results if getattr(r, 'decision_type', '') in ('hold', ''))
 
         report_lines = [
-            f"# 🎯 {report_date} 决策仪表盘",
+            f"# 🎯 {report_date} Karar Paneli",
             "",
-            f"> 共分析 **{len(results)}** 只股票 | 🟢买入:{buy_count} 🟡观望:{hold_count} 🔴卖出:{sell_count}",
+            f"> Toplam **{len(results)}** ** hisse |  🟢Al:{buy_count} 🟡Izle:{hold_count} 🔴Sat:{sell_count}",
             "",
         ]
 
         # === 新增：分析结果摘要 (Issue #112) ===
         if results:
             report_lines.extend([
-                "## 📊 分析结果摘要",
+                "## Analiz Sonuclari Ozeti",
                 "",
             ])
             for r in sorted_results:
@@ -812,7 +812,7 @@ class NotificationService(
                 display_name = self._escape_md(r.name)
                 report_lines.append(
                     f"{signal_emoji} **{display_name}({r.code})**: {r.operation_advice} | "
-                    f"评分 {r.sentiment_score} | {r.trend_prediction}"
+                    f"Puan {r.sentiment_score} | {r.trend_prediction}"
                 )
             report_lines.extend([
                 "",
@@ -820,14 +820,14 @@ class NotificationService(
                 "",
             ])
 
-        # 逐个股票的决策仪表盘（Issue #262: summary_only 时跳过详情）
+        # 逐个股票的Karar Paneli（Issue #262: summary_only 时跳过详情）
         if not self._report_summary_only:
             for result in sorted_results:
                 signal_text, signal_emoji, signal_tag = self._get_signal_level(result)
                 dashboard = result.dashboard if hasattr(result, 'dashboard') and result.dashboard else {}
                 
                 # 股票名称（优先使用 dashboard 或 result 中的名称，转义 *ST 等特殊字符）
-                raw_name = result.name if result.name and not result.name.startswith('股票') else f'股票{result.code}'
+                raw_name = result.name if result.name and not result.name.startswith('Hisse') else f'Hisse{result.code}'
                 stock_name = self._escape_md(raw_name)
                 
                 report_lines.extend([
@@ -839,58 +839,58 @@ class NotificationService(
                 intel = dashboard.get('intelligence', {}) if dashboard else {}
                 if intel:
                     report_lines.extend([
-                        "### 📰 重要信息速览",
+                        "### Onemli Bilgiler",
                         "",
                     ])
                     # 舆情情绪总结
                     if intel.get('sentiment_summary'):
-                        report_lines.append(f"**💭 舆情情绪**: {intel['sentiment_summary']}")
+                        report_lines.append(f"**💭 Haber Duyarliligi**: {intel['sentiment_summary']}")
                     # 业绩预期
                     if intel.get('earnings_outlook'):
-                        report_lines.append(f"**📊 业绩预期**: {intel['earnings_outlook']}")
+                        report_lines.append(f"**📊 Kazanc Beklentisi**: {intel['earnings_outlook']}")
                     # 风险警报（醒目显示）
                     risk_alerts = intel.get('risk_alerts', [])
                     if risk_alerts:
                         report_lines.append("")
-                        report_lines.append("**🚨 风险警报**:")
+                        report_lines.append("**🚨 Risk Uyarisi**:")
                         for alert in risk_alerts:
                             report_lines.append(f"- {alert}")
                     # 利好催化
                     catalysts = intel.get('positive_catalysts', [])
                     if catalysts:
                         report_lines.append("")
-                        report_lines.append("**✨ 利好催化**:")
+                        report_lines.append("**✨ Olumlu Katalizorler**:")
                         for cat in catalysts:
                             report_lines.append(f"- {cat}")
                     # 最新消息
                     if intel.get('latest_news'):
                         report_lines.append("")
-                        report_lines.append(f"**📢 最新动态**: {intel['latest_news']}")
+                        report_lines.append(f"**📢 Son Gelismeler**: {intel['latest_news']}")
                     report_lines.append("")
                 
                 # ========== 核心结论 ==========
                 core = dashboard.get('core_conclusion', {}) if dashboard else {}
                 one_sentence = core.get('one_sentence', result.analysis_summary)
-                time_sense = core.get('time_sensitivity', '本周内')
+                time_sense = core.get('time_sensitivity', 'Bu Hafta Icinde')
                 pos_advice = core.get('position_advice', {})
                 
                 report_lines.extend([
-                    "### 📌 核心结论",
+                    "### Temel Sonuc",
                     "",
                     f"**{signal_emoji} {signal_text}** | {result.trend_prediction}",
                     "",
-                    f"> **一句话决策**: {one_sentence}",
+                    f"> **Tek Cumle Karar**: {one_sentence}",
                     "",
-                    f"⏰ **时效性**: {time_sense}",
+                    f"⏰ **Zamanlama**: {time_sense}",
                     "",
                 ])
                 # 持仓分类建议
                 if pos_advice:
                     report_lines.extend([
-                        "| 持仓情况 | 操作建议 |",
+                        "| Pozisyon Durumu | Islem Onerisi |",
                         "|---------|---------|",
-                        f"| 🆕 **空仓者** | {pos_advice.get('no_position', result.operation_advice)} |",
-                        f"| 💼 **持仓者** | {pos_advice.get('has_position', '继续持有')} |",
+                        f"| 🆕 **Pozisyonsuz** | {pos_advice.get('no_position', result.operation_advice)} |",
+                        f"| 💼 **Pozisyonlu** | {pos_advice.get('has_position', 'Tutmaya devam et')} |",
                         "",
                     ])
 
@@ -905,45 +905,45 @@ class NotificationService(
                     chip_data = data_persp.get('chip_structure', {})
                     
                     report_lines.extend([
-                        "### 📊 数据透视",
+                        "### Veri Perspektifi",
                         "",
                     ])
                     # 趋势状态
                     if trend_data:
                         is_bullish = "✅ 是" if trend_data.get('is_bullish', False) else "❌ 否"
                         report_lines.extend([
-                            f"**均线排列**: {trend_data.get('ma_alignment', 'N/A')} | 多头排列: {is_bullish} | 趋势强度: {trend_data.get('trend_score', 'N/A')}/100",
+                            f"**Ortalama Dizilimi**: {trend_data.get('ma_alignment', 'N/A')} | Boga dizilimi: {is_bullish} | Trend gucu: {trend_data.get('trend_score', 'N/A')}/100",
                             "",
                         ])
                     # 价格位置
                     if price_data:
                         bias_status = price_data.get('bias_status', 'N/A')
-                        bias_emoji = "✅" if bias_status == "安全" else ("⚠️" if bias_status == "警戒" else "🚨")
+                        bias_emoji = "✅" if bias_status == "Guvenli" else ("⚠️" if bias_status == "Dikkat" else "🚨")
                         report_lines.extend([
-                            "| 价格指标 | 数值 |",
+                            "| Fiyat Gostergesi | Deger |",
                             "|---------|------|",
-                            f"| 当前价 | {price_data.get('current_price', 'N/A')} |",
+                            f"| Mevcut Fiyat | {price_data.get('current_price', 'N/A')} |",
                             f"| MA5 | {price_data.get('ma5', 'N/A')} |",
                             f"| MA10 | {price_data.get('ma10', 'N/A')} |",
                             f"| MA20 | {price_data.get('ma20', 'N/A')} |",
-                            f"| 乖离率(MA5) | {price_data.get('bias_ma5', 'N/A')}% {bias_emoji}{bias_status} |",
-                            f"| 支撑位 | {price_data.get('support_level', 'N/A')} |",
-                            f"| 压力位 | {price_data.get('resistance_level', 'N/A')} |",
+                            f"| Sapma Orani(MA5) | {price_data.get('bias_ma5', 'N/A')}% {bias_emoji}{bias_status} |",
+                            f"| Destek | {price_data.get('support_level', 'N/A')} |",
+                            f"| Direnc | {price_data.get('resistance_level', 'N/A')} |",
                             "",
                         ])
                     # 量能分析
                     if vol_data:
                         report_lines.extend([
-                            f"**量能**: 量比 {vol_data.get('volume_ratio', 'N/A')} ({vol_data.get('volume_status', '')}) | 换手率 {vol_data.get('turnover_rate', 'N/A')}%",
+                            f"**Hacim**: Hacim orani {vol_data.get('volume_ratio', 'N/A')} ({vol_data.get('volume_status', '')}) | Devir orani {vol_data.get('turnover_rate', 'N/A')}%",
                             f"💡 *{vol_data.get('volume_meaning', '')}*",
                             "",
                         ])
                     # 筹码结构
                     if chip_data:
                         chip_health = chip_data.get('chip_health', 'N/A')
-                        chip_emoji = "✅" if chip_health == "健康" else ("⚠️" if chip_health == "一般" else "🚨")
+                        chip_emoji = "✅" if chip_health == "Saglikli" else ("⚠️" if chip_health == "Normal" else "🚨")
                         report_lines.extend([
-                            f"**筹码**: 获利比例 {chip_data.get('profit_ratio', 'N/A')} | 平均成本 {chip_data.get('avg_cost', 'N/A')} | 集中度 {chip_data.get('concentration', 'N/A')} {chip_emoji}{chip_health}",
+                            f"**Cip**: Kar orani {chip_data.get('profit_ratio', 'N/A')} | Ortalama maliyet {chip_data.get('avg_cost', 'N/A')} | Yogunluk {chip_data.get('concentration', 'N/A')} {chip_emoji}{chip_health}",
                             "",
                         ])
                 
@@ -951,37 +951,37 @@ class NotificationService(
                 battle = dashboard.get('battle_plan', {}) if dashboard else {}
                 if battle:
                     report_lines.extend([
-                        "### 🎯 作战计划",
+                        "### Strateji Plani",
                         "",
                     ])
                     # 狙击点位
                     sniper = battle.get('sniper_points', {})
                     if sniper:
                         report_lines.extend([
-                            "**📍 狙击点位**",
+                            "**📍 Hedef Noktalar**",
                             "",
-                            "| 点位类型 | 价格 |",
+                            "| Nokta Tipi | Fiyat |",
                             "|---------|------|",
-                            f"| 🎯 理想买入点 | {self._clean_sniper_value(sniper.get('ideal_buy', 'N/A'))} |",
-                            f"| 🔵 次优买入点 | {self._clean_sniper_value(sniper.get('secondary_buy', 'N/A'))} |",
-                            f"| 🛑 止损位 | {self._clean_sniper_value(sniper.get('stop_loss', 'N/A'))} |",
-                            f"| 🎊 目标位 | {self._clean_sniper_value(sniper.get('take_profit', 'N/A'))} |",
+                            f"| 🎯 Ideal Alim Noktasi | {self._clean_sniper_value(sniper.get('ideal_buy', 'N/A'))} |",
+                            f"| 🔵 Ikinci Alim Noktasi | {self._clean_sniper_value(sniper.get('secondary_buy', 'N/A'))} |",
+                            f"| 🛑 Zarar Durdurma | {self._clean_sniper_value(sniper.get('stop_loss', 'N/A'))} |",
+                            f"| 🎊 Hedef | {self._clean_sniper_value(sniper.get('take_profit', 'N/A'))} |",
                             "",
                         ])
                     # 仓位策略
                     position = battle.get('position_strategy', {})
                     if position:
                         report_lines.extend([
-                            f"**💰 仓位建议**: {position.get('suggested_position', 'N/A')}",
-                            f"- 建仓策略: {position.get('entry_plan', 'N/A')}",
-                            f"- 风控策略: {position.get('risk_control', 'N/A')}",
+                            f"**💰 Pozisyon Onerisi**: {position.get('suggested_position', 'N/A')}",
+                            f"- Pozisyon acma stratejisi: {position.get('entry_plan', 'N/A')}",
+                            f"- Risk kontrol stratejisi: {position.get('risk_control', 'N/A')}",
                             "",
                         ])
                     # 检查清单
                     checklist = battle.get('action_checklist', []) if battle else []
                     if checklist:
                         report_lines.extend([
-                            "**✅ 检查清单**",
+                            "**✅ Kontrol Listesi**",
                             "",
                         ])
                         for item in checklist:
@@ -993,30 +993,30 @@ class NotificationService(
                     # 操作理由
                     if result.buy_reason:
                         report_lines.extend([
-                            f"**💡 操作理由**: {result.buy_reason}",
+                            f"**💡 Islem Gerekcesi**: {result.buy_reason}",
                             "",
                         ])
                     # 风险提示
                     if result.risk_warning:
                         report_lines.extend([
-                            f"**⚠️ 风险提示**: {result.risk_warning}",
+                            f"**⚠️ Risk Uyarisi**: {result.risk_warning}",
                             "",
                         ])
                     # 技术面分析
                     if result.ma_analysis or result.volume_analysis:
                         report_lines.extend([
-                            "### 📊 技术面",
+                            "### Teknik",
                             "",
                         ])
                         if result.ma_analysis:
-                            report_lines.append(f"**均线**: {result.ma_analysis}")
+                            report_lines.append(f"**Hareketli Ortalama**: {result.ma_analysis}")
                         if result.volume_analysis:
-                            report_lines.append(f"**量能**: {result.volume_analysis}")
+                            report_lines.append(f"**Hacim**: {result.volume_analysis}")
                         report_lines.append("")
                     # 消息面
                     if result.news_summary:
                         report_lines.extend([
-                            "### 📰 消息面",
+                            "### Haberler",
                             f"{result.news_summary}",
                             "",
                         ])
@@ -1029,14 +1029,14 @@ class NotificationService(
         # 底部（去除免责声明）
         report_lines.extend([
             "",
-            f"*报告生成时间：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*",
+            f"*Rapor olusturma zamani: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*",
         ])
         
         return "\n".join(report_lines)
     
     def generate_wechat_dashboard(self, results: List[AnalysisResult]) -> str:
         """
-        生成企业微信决策仪表盘精简版（控制在4000字符内）
+        生成企业微信Karar Paneli精简版（控制在4000字符内）
         
         只保留核心结论和狙击点位
         
@@ -1044,7 +1044,7 @@ class NotificationService(
             results: 分析结果列表
             
         Returns:
-            精简版决策仪表盘
+            精简版Karar Paneli
         """
         config = get_config()
         if getattr(config, 'report_renderer_enabled', False) and results:
@@ -1069,9 +1069,9 @@ class NotificationService(
         hold_count = sum(1 for r in results if getattr(r, 'decision_type', '') in ('hold', ''))
         
         lines = [
-            f"## 🎯 {report_date} 决策仪表盘",
+            f"## 🎯 {report_date} Karar Paneli",
             "",
-            f"> {len(results)}只股票 | 🟢买入:{buy_count} 🟡观望:{hold_count} 🔴卖出:{sell_count}",
+            f"> {len(results)}** hisse |  🟢Al:{buy_count} 🟡Izle:{hold_count} 🔴Sat:{sell_count}",
             "",
         ]
         
@@ -1081,10 +1081,10 @@ class NotificationService(
             lines.append("")
             for r in sorted_results:
                 _, signal_emoji, _ = self._get_signal_level(r)
-                stock_name = self._escape_md(r.name if r.name and not r.name.startswith('股票') else f'股票{r.code}')
+                stock_name = self._escape_md(r.name if r.name and not r.name.startswith('Hisse') else f'Hisse{r.code}')
                 lines.append(
                     f"{signal_emoji} **{stock_name}({r.code})**: {r.operation_advice} | "
-                    f"评分 {r.sentiment_score} | {r.trend_prediction}"
+                    f"Puan {r.sentiment_score} | {r.trend_prediction}"
                 )
         else:
             for result in sorted_results:
@@ -1095,7 +1095,7 @@ class NotificationService(
                 intel = dashboard.get('intelligence', {}) if dashboard else {}
                 
                 # 股票名称
-                stock_name = result.name if result.name and not result.name.startswith('股票') else f'股票{result.code}'
+                stock_name = result.name if result.name and not result.name.startswith('Hisse') else f'Hisse{result.code}'
                 stock_name = self._escape_md(stock_name)
                 
                 # 标题行：信号等级 + 股票名称
@@ -1114,10 +1114,10 @@ class NotificationService(
                 # 业绩预期
                 if intel.get('earnings_outlook'):
                     outlook = str(intel['earnings_outlook'])[:60]
-                    info_lines.append(f"📊 业绩: {outlook}")
+                    info_lines.append(f"📊 Kazanc: {outlook}")
                 if intel.get('sentiment_summary'):
                     sentiment = str(intel['sentiment_summary'])[:50]
-                    info_lines.append(f"💭 舆情: {sentiment}")
+                    info_lines.append(f"💭 Duyarlilik: {sentiment}")
                 if info_lines:
                     lines.extend(info_lines)
                     lines.append("")
@@ -1125,7 +1125,7 @@ class NotificationService(
                 # 风险警报（最重要，醒目显示）
                 risks = intel.get('risk_alerts', []) if intel else []
                 if risks:
-                    lines.append("🚨 **风险**:")
+                    lines.append("🚨 **Risk**:")
                     for risk in risks[:2]:  # 最多显示2条
                         risk_str = str(risk)
                         risk_text = risk_str[:50] + "..." if len(risk_str) > 50 else risk_str
@@ -1135,7 +1135,7 @@ class NotificationService(
                 # 利好催化
                 catalysts = intel.get('positive_catalysts', []) if intel else []
                 if catalysts:
-                    lines.append("✨ **利好**:")
+                    lines.append("✨ **Olumlu**:")
                     for cat in catalysts[:2]:  # 最多显示2条
                         cat_str = str(cat)
                         cat_text = cat_str[:50] + "..." if len(cat_str) > 50 else cat_str
@@ -1150,11 +1150,11 @@ class NotificationService(
                     take_profit = str(sniper.get('take_profit', ''))
                     points = []
                     if ideal_buy:
-                        points.append(f"🎯买点:{ideal_buy[:15]}")
+                        points.append(f"🎯Alim:{ideal_buy[:15]}")
                     if stop_loss:
-                        points.append(f"🛑止损:{stop_loss[:15]}")
+                        points.append(f"🛑Zarar durdurma:{stop_loss[:15]}")
                     if take_profit:
-                        points.append(f"🎊目标:{take_profit[:15]}")
+                        points.append(f"🎊Hedef:{take_profit[:15]}")
                     if points:
                         lines.append(" | ".join(points))
                         lines.append("")
@@ -1165,9 +1165,9 @@ class NotificationService(
                     no_pos = str(pos_advice.get('no_position', ''))
                     has_pos = str(pos_advice.get('has_position', ''))
                     if no_pos:
-                        lines.append(f"🆕 空仓者: {no_pos[:50]}")
+                        lines.append(f"🆕 Pozisyonsuz: {no_pos[:50]}")
                     if has_pos:
-                        lines.append(f"💼 持仓者: {has_pos[:50]}")
+                        lines.append(f"💼 Pozisyonlu: {has_pos[:50]}")
                     lines.append("")
                 
                 # 检查清单简化版
@@ -1176,7 +1176,7 @@ class NotificationService(
                     # 只显示不通过的项目
                     failed_checks = [str(c) for c in checklist if str(c).startswith('❌') or str(c).startswith('⚠️')]
                     if failed_checks:
-                        lines.append("**检查未通过项**:")
+                        lines.append("**Gecemeyen Kontroller**:")
                         for check in failed_checks[:3]:
                             lines.append(f"   {check[:40]}")
                         lines.append("")
@@ -1185,10 +1185,10 @@ class NotificationService(
                 lines.append("")
         
         # 底部
-        lines.append(f"*生成时间: {datetime.now().strftime('%H:%M')}*")
+        lines.append(f"*Olusturma zamani: {datetime.now().strftime('%H:%M')}*")
         models = self._collect_models_used(results)
         if models:
-            lines.append(f"*分析模型: {', '.join(models)}*")
+            lines.append(f"*Analiz modeli: {', '.join(models)}*")
 
         content = "\n".join(lines)
         
@@ -1216,9 +1216,9 @@ class NotificationService(
         avg_score = sum(r.sentiment_score for r in results) / len(results) if results else 0
 
         lines = [
-            f"## 📅 {report_date} 股票分析报告",
+            f"## 📅 {report_date} Hisse Analiz Raporu",
             "",
-            f"> 共 **{len(results)}** 只 | 🟢买入:{buy_count} 🟡持有:{hold_count} 🔴卖出:{sell_count} | 均分:{avg_score:.0f}",
+            f"> Toplam **{len(results)}**  adet | 🟢Al:{buy_count} 🟡Tut:{hold_count} 🔴Sat:{sell_count} | Ort. puan:{avg_score:.0f}",
             "",
         ]
         
@@ -1250,11 +1250,11 @@ class NotificationService(
         # 底部（模型行在 --- 之前，Issue #528）
         models = self._collect_models_used(results)
         if models:
-            lines.append(f"*分析模型: {', '.join(models)}*")
+            lines.append(f"*Analiz modeli: {', '.join(models)}*")
         lines.extend([
             "---",
-            "*AI生成，仅供参考，不构成投资建议*",
-            f"*详细报告见 reports/report_{report_date.replace('-', '')}.md*"
+            "*AI tarafindan uretilmistir, yalnizca referans amaclidir, yatirim tavsiyesi degildir*",
+            f"*Detayli rapor icin: reports/report_{report_date.replace('-', '')}.md*"
         ])
 
         content = "\n".join(lines)
@@ -1291,20 +1291,20 @@ class NotificationService(
                 return out
         # Fallback: brief summary from dashboard report
         if not results:
-            return f"# {report_date} 决策简报\n\n无分析结果"
+            return f"# {report_date} Karar Ozeti\n\nAnaliz sonucu yok"
         sorted_results = sorted(results, key=lambda x: x.sentiment_score, reverse=True)
         buy_count = sum(1 for r in results if getattr(r, 'decision_type', '') == 'buy')
         sell_count = sum(1 for r in results if getattr(r, 'decision_type', '') == 'sell')
         hold_count = sum(1 for r in results if getattr(r, 'decision_type', '') in ('hold', ''))
         lines = [
-            f"# {report_date} 决策简报",
+            f"# {report_date} Karar Ozeti",
             "",
-            f"> {len(results)}只 | 🟢{buy_count} 🟡{hold_count} 🔴{sell_count}",
+            f"> {len(results)} adet | 🟢{buy_count} 🟡{hold_count} 🔴{sell_count}",
             "",
         ]
         for r in sorted_results:
             _, emoji, _ = self._get_signal_level(r)
-            name = r.name if r.name and not r.name.startswith('股票') else f'股票{r.code}'
+            name = r.name if r.name and not r.name.startswith('Hisse') else f'Hisse{r.code}'
             dash = r.dashboard or {}
             core = dash.get('core_conclusion', {}) or {}
             one = (core.get('one_sentence') or r.analysis_summary or '')[:60]
@@ -1333,7 +1333,7 @@ class NotificationService(
         intel = dashboard.get('intelligence', {}) if dashboard else {}
         
         # 股票名称（转义 *ST 等特殊字符）
-        raw_name = result.name if result.name and not result.name.startswith('股票') else f'股票{result.code}'
+        raw_name = result.name if result.name and not result.name.startswith('Hisse') else f'Hisse{result.code}'
         stock_name = self._escape_md(raw_name)
         
         lines = [
@@ -1349,7 +1349,7 @@ class NotificationService(
         one_sentence = core.get('one_sentence', result.analysis_summary) if core else result.analysis_summary
         if one_sentence:
             lines.extend([
-                "### 📌 核心结论",
+                "### Temel Sonuc",
                 "",
                 f"**{signal_text}**: {one_sentence}",
                 "",
@@ -1360,23 +1360,23 @@ class NotificationService(
         if intel:
             if intel.get('earnings_outlook'):
                 if not info_added:
-                    lines.append("### 📰 重要信息")
+                    lines.append("### Onemli Bilgiler")
                     lines.append("")
                     info_added = True
-                lines.append(f"📊 **业绩预期**: {str(intel['earnings_outlook'])[:100]}")
+                lines.append(f"📊 **Kazanc Beklentisi**: {str(intel['earnings_outlook'])[:100]}")
             
             if intel.get('sentiment_summary'):
                 if not info_added:
-                    lines.append("### 📰 重要信息")
+                    lines.append("### Onemli Bilgiler")
                     lines.append("")
                     info_added = True
-                lines.append(f"💭 **舆情情绪**: {str(intel['sentiment_summary'])[:80]}")
+                lines.append(f"💭 **Haber Duyarliligi**: {str(intel['sentiment_summary'])[:80]}")
             
             # 风险警报
             risks = intel.get('risk_alerts', [])
             if risks:
                 if not info_added:
-                    lines.append("### 📰 重要信息")
+                    lines.append("### Onemli Bilgiler")
                     lines.append("")
                     info_added = True
                 lines.append("")
@@ -1417,15 +1417,15 @@ class NotificationService(
                 "### 💼 持仓建议",
                 "",
                 f"- 🆕 **空仓者**: {pos_advice.get('no_position', result.operation_advice)}",
-                f"- 💼 **持仓者**: {pos_advice.get('has_position', '继续持有')}",
+                f"- 💼 **持仓者**: {pos_advice.get('has_position', 'Tutmaya devam et')}",
                 "",
             ])
         
         lines.append("---")
         model_used = normalize_model_used(getattr(result, "model_used", None))
         if model_used:
-            lines.append(f"*分析模型: {model_used}*")
-        lines.append("*AI生成，仅供参考，不构成投资建议*")
+            lines.append(f"*Analiz modeli: {model_used}*")
+        lines.append("*AI tarafindan uretilmistir, yalnizca referans amaclidir, yatirim tavsiyesi degildir*")
 
         return "\n".join(lines)
 
@@ -1463,7 +1463,7 @@ class NotificationService(
             display_source = self._SOURCE_DISPLAY_NAMES.get(raw_source, raw_source)
             lines.extend([
                 "",
-                "| 当前价 | 量比 | 换手率 | 行情来源 |",
+                "| Mevcut Fiyat | Hacim orani | Devir orani | 行情来源 |",
                 "|-------|------|--------|----------|",
                 f"| {snapshot.get('price', 'N/A')} | {snapshot.get('volume_ratio', 'N/A')} | "
                 f"{snapshot.get('turnover_rate', 'N/A')} | {display_source} |",
@@ -1698,7 +1698,7 @@ class NotificationBuilder:
         
         for r in sorted(results, key=lambda x: x.sentiment_score, reverse=True):
             emoji = r.get_emoji()
-            lines.append(f"{emoji} {r.name}({r.code}): {r.operation_advice} | 评分 {r.sentiment_score}")
+            lines.append(f"{emoji} {r.name}({r.code}): {r.operation_advice} | Puan {r.sentiment_score}")
         
         return "\n".join(lines)
 
@@ -1740,7 +1740,7 @@ if __name__ == "__main__":
             trend_prediction='看多',
             analysis_summary='技术面强势，消息面利好',
             operation_advice='买入',
-            technical_analysis='放量突破 MA20，MACD 金叉',
+            technical_analysis='Artan Hacim突破 MA20，MACD 金叉',
             news_summary='公司发布分红公告，业绩超预期',
         ),
         AnalysisResult(
